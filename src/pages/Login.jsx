@@ -1,6 +1,8 @@
 import { useState } from "react";
 
 const Login = ({ onLoginSuccess, switchToRegister }) => {
+  const backendURL = import.meta.env.VITE_BACKEND_URL;
+
   // Email login states
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -10,7 +12,7 @@ const Login = ({ onLoginSuccess, switchToRegister }) => {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/login", {
+      const res = await fetch(`${backendURL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
