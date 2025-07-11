@@ -1,7 +1,8 @@
 import { useState } from "react";
 
 const Login = ({ onLoginSuccess, switchToRegister }) => {
-  const backendURL = import.meta.env.VITE_BACKEND_URL;
+
+   const backendURL = "https://healsync-qjdq.onrender.com";
 
   // Email login states
   const [email, setEmail] = useState("");

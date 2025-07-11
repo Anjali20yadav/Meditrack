@@ -10,7 +10,7 @@ const Register = ({ switchToLogin }) => {
   });
 
   const [message, setMessage] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // 👁️ toggle state
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -23,8 +23,10 @@ const Register = ({ switchToLogin }) => {
     e.preventDefault();
     setMessage('');
 
+    const backendURL = "https://healsync-qjdq.onrender.com"; // 👈 Ensure local dev works
+
     try {
-      const res = await axios.post('/api/auth/register', formData);
+      const res = await axios.post(`${backendURL}/api/auth/register`, formData);
       if (res.status === 201 || res.status === 200) {
         setMessage('Registration successful! You can now log in.');
       }
@@ -65,7 +67,6 @@ const Register = ({ switchToLogin }) => {
           className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
 
-        {/* Password with toggle icon */}
         <div className="relative">
           <input
             type={showPassword ? 'text' : 'password'}
