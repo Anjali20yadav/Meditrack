@@ -2,7 +2,7 @@ import { useState } from "react";
 
 const Login = ({ onLoginSuccess, switchToRegister }) => {
 
-   const backendURL = "http://localhost:5000";
+   const backendURL = "https://healsync-nnl9.onrender.com/";
 
   // Email login states
   const [email, setEmail] = useState("");
