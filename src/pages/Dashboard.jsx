@@ -11,66 +11,70 @@ const Dashboard = ({ onLogout }) => {
     duration: '',
     notes: '',
   });
-
   const [reminders, setReminders] = useState([]);
   const [message, setMessage] = useState('');
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
   const token = localStorage.getItem('token');
-  const BASE_URL = 'https://healsync-qjdq.onrender.com';
+  const BASE_URL = 'http://localhost:5000';
 
   useEffect(() => {
-    const fetchReminders = async () => {
-      if (!token) return;
-      try {
-        const res = await axios.get(`${BASE_URL}/api/medicine`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setReminders(res.data);
-      } catch (err) {
-        console.error('Failed to fetch reminders:', err);
-      }
-    };
-    fetchReminders();
+    if (!token) return;
+    axios.get(`${BASE_URL}/api/medicine`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => setReminders(res.data))
+      .catch(console.error);
   }, [token]);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  // Combine date & time into ISO string for backend
+  const combineDateTime = (date, time) => {
+    const [hours, minutes] = time.split(':').map(Number);
+    const dt = new Date(date);
+    dt.setHours(hours, minutes, 0, 0);
+    return dt.toISOString();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage('');
     if (!token) return setMessage('❌ No token found');
-
     try {
-      const res = await axios.post(`${BASE_URL}/api/medicine`, formData, {
-        headers: { Authorization: `Bearer ${token}` },
+      const payload = {
+        name: formData.name,
+        dosage: formData.dosage,
+        time: formData.time,
+        date: formData.date,
+        duration: Number(formData.duration),
+        notes: formData.notes,
+      };
+      const res = await axios.post(`${BASE_URL}/api/medicine`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       setReminders([...reminders, res.data]);
       setMessage('✅ Reminder added!');
       setFormData({ name: '', dosage: '', time: '', date: '', duration: '', notes: '' });
     } catch (err) {
-      console.error('Add error:', err);
       setMessage(err.response?.data?.msg || '❌ Error adding reminder');
     }
   };
 
-  const startEdit = (reminder) => {
+  const startEdit = reminder => {
     setEditId(reminder._id);
+    const dateOnly = reminder.date.slice(0, 10);
+    const timeOnly = new Date(reminder.scheduledTime).toTimeString().slice(0, 5);
     setEditData({
       name: reminder.name,
       dosage: reminder.dosage,
-      time: reminder.time,
-      date: reminder.date.slice(0, 10),
+      time: timeOnly,
+      date: dateOnly,
       duration: reminder.duration,
       notes: reminder.notes || '',
     });
   };
 
-  const handleEditChange = (e) => {
-    setEditData({ ...editData, [e.target.name]: e.target.value });
-  };
+  const handleEditChange = e => setEditData({ ...editData, [e.target.name]: e.target.value });
 
   const cancelEdit = () => {
     setEditId(null);
@@ -79,15 +83,20 @@ const Dashboard = ({ onLogout }) => {
 
   const saveEdit = async (id) => {
     try {
-      const res = await axios.put(`${BASE_URL}/api/medicine/${id}`, editData, {
-        headers: { Authorization: `Bearer ${token}` },
+      const payload = {
+        ...editData,
+        scheduledTime: combineDateTime(editData.date, editData.time),
+        duration: Number(editData.duration),
+      };
+      delete payload.time;
+      const res = await axios.put(`${BASE_URL}/api/medicine/${id}`, payload, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      setReminders((prev) => prev.map((r) => (r._id === id ? res.data : r)));
+      setReminders(reminders.map(r => r._id === id ? res.data : r));
       cancelEdit();
       setMessage('✅ Reminder updated!');
     } catch (err) {
-      console.error('Edit error:', err);
-      setMessage(err.response?.data?.msg || '❌ Error updating');
+      setMessage(err.response?.data?.msg || '❌ Error updating reminder');
     }
   };
 
@@ -95,12 +104,11 @@ const Dashboard = ({ onLogout }) => {
     if (!window.confirm('Delete this reminder?')) return;
     try {
       await axios.delete(`${BASE_URL}/api/medicine/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }
       });
-      setReminders(reminders.filter((r) => r._id !== id));
-      setMessage('✅ Deleted successfully!');
+      setReminders(reminders.filter(r => r._id !== id));
+      setMessage('✅ Reminder deleted!');
     } catch (err) {
-      console.error('Delete error:', err);
       setMessage('❌ Error deleting reminder');
     }
   };
@@ -119,13 +127,10 @@ const Dashboard = ({ onLogout }) => {
           </button>
         </div>
 
-        {/* FORM SECTION */}
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white shadow-lg p-6 rounded-xl grid gap-4 max-w-2xl mx-auto"
-        >
+        {/* Add Reminder Form */}
+        <form onSubmit={handleSubmit} className="bg-white shadow-lg p-6 rounded-xl grid gap-4 max-w-2xl mx-auto">
           <h3 className="text-xl font-semibold text-center text-green-700 mb-2">➕ Add Medicine Reminder</h3>
-          {['name', 'dosage', 'time', 'date', 'duration', 'notes'].map((field) => (
+          {['name', 'dosage', 'time', 'date', 'duration', 'notes'].map(field => (
             <input
               key={field}
               name={field}
@@ -145,25 +150,23 @@ const Dashboard = ({ onLogout }) => {
           </button>
         </form>
 
-        {/* Success/Error Message */}
-        {message && (
-          <p className="text-center mt-4 text-sm font-medium text-green-700">{message}</p>
-        )}
+        {/* Message */}
+        {message && <p className="text-center mt-4 text-sm font-medium text-green-700">{message}</p>}
 
-        {/* REMINDER LIST */}
+        {/* Reminder List */}
         <h3 className="text-2xl font-semibold mt-10 mb-4 text-green-700">📋 Your Reminders</h3>
         <div className="grid gap-6 md:grid-cols-2">
           {reminders.length === 0 ? (
             <p className="text-gray-600">No reminders yet.</p>
           ) : (
-            reminders.map((reminder) => (
+            reminders.map(reminder => (
               <div
                 key={reminder._id}
-                className="bg-green-50 border border-green-200 p-4 rounded-xl shadow transition-transform duration-300 hover:shadow-xl hover:scale-[1.01] min-h-[180px]"
+                className="bg-green-50 border border-green-200 p-4 rounded-xl shadow min-h-[180px]"
               >
                 {editId === reminder._id ? (
                   <div className="grid gap-2">
-                    {['name', 'dosage', 'time', 'date', 'duration', 'notes'].map((field) => (
+                    {['name', 'dosage', 'time', 'date', 'duration', 'notes'].map(field => (
                       <input
                         key={field}
                         name={field}
@@ -193,8 +196,9 @@ const Dashboard = ({ onLogout }) => {
                   <div>
                     <h4 className="text-md font-bold text-green-800 mb-1">{reminder.name}</h4>
                     <p className="text-sm text-gray-700">💊 Dosage: {reminder.dosage}</p>
-                   
-                    <p className="text-sm text-gray-700">🕒 Time: {reminder.time}</p>
+                    <p className="text-sm text-gray-700">
+                      🕒 Time: {new Date(reminder.scheduledTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </p>
                     <p className="text-sm text-gray-700">⏳ Duration: {reminder.duration} days</p>
                     {reminder.notes && (
                       <p className="italic text-sm text-gray-600 mt-1">📝 {reminder.notes}</p>
