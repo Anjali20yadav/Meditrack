@@ -23,7 +23,7 @@ const Register = ({ switchToLogin }) => {
     e.preventDefault();
     setMessage('');
 
-    const backendURL = "https://healsync-nnl9.onrender.com/"; // 👈 Ensure local dev works
+    const backendURL = "https://servermedi.onrender.com"; // 👈 Ensure local dev works
 
     try {
       const res = await axios.post(`${backendURL}/api/auth/register`, formData);
