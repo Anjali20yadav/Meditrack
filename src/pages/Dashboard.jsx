@@ -16,7 +16,7 @@ const Dashboard = ({ onLogout }) => {
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
   const token = localStorage.getItem('token');
-  const BASE_URL = 'http://localhost:5000';
+  const BASE_URL = 'https://servermedi.onrender.com';
 
   useEffect(() => {
     if (!token) return;

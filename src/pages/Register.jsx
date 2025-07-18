@@ -23,7 +23,7 @@ const Register = ({ switchToLogin }) => {
     e.preventDefault();
     setMessage('');
 
-    const backendURL = "http://localhost:5000"; // 👈 Ensure local dev works
+    const backendURL = "https://servermedi.onrender.com";
 
     try {
       const res = await axios.post(`${backendURL}/api/auth/register`, formData);
